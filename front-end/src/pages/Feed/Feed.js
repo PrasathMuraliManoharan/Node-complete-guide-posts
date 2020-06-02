@@ -46,11 +46,16 @@ class Feed extends Component {
       page++;
       this.setState({ postPage: page });
     }
+
     if (direction === 'previous') {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('http://localhost:8080/feed/posts')
+    fetch('http://localhost:8080/feed/posts?page=' + page, {
+      headers: {
+        Authorization: 'Bearer ' + this.props.token
+      }
+    })
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch posts.');
@@ -106,21 +111,23 @@ class Feed extends Component {
       editLoading: true
     });
     // Set up data (with image!)
+    const formData = new FormData();
+    formData.append('title', postData.title);
+    formData.append('content', postData.content)
+    formData.append('image', postData.imageUrl)
     let url = 'http://localhost:8080/feed/post';
     let method = 'POST';
     if (this.state.editPost) {
-      url = 'URL';
+      url = 'http://localhost:8080/feed/post/' + this.state.editPost._id;
+      let method = 'PUT';
     }
 
     fetch(url, {
       method: method,
       headers: {
-        "Content-Type": "application/json"
+        Authorization: 'Bearer ' + this.props.token
       },
-      body: JSON.stringify({
-        title: postData.title,
-        content: postData.content
-      })
+      body: formData
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
@@ -171,7 +178,12 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch('URL')
+    fetch('http://localhost:8080/feed/post/' + postId, {
+      method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer ' + this.props.token
+      }
+    })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error('Deleting a post failed!');
@@ -228,6 +240,7 @@ class Feed extends Component {
           <Button mode="raised" design="accent" onClick={this.newPostHandler}>
             New Post
           </Button>
+
         </section>
         <section className="feed">
           {this.state.postsLoading && (
